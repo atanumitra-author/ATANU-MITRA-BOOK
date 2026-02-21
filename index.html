@@ -780,7 +780,7 @@ footer{
         <div class="c-icon">✉</div>
         <div>
           <div class="c-lbl">Email</div>
-          <div class="c-val">mramitra70@gmail.com</div>
+          <div class="c-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="670a15060a0e131506505727000a060e0b4904080a">[email&#160;protected]</a></div>
         </div>
       </div>
       <div class="c-item">
@@ -836,7 +836,7 @@ footer{
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 let allBooks = [];
 let curFilter = 'all';
 
@@ -871,8 +871,8 @@ function applyFilter(f) {
   const marqueeWrap = document.getElementById('marquee-wrap');
   const staticGrid  = document.getElementById('books-grid');
 
-  if (f === 'all') {
-    /* marquee mode */
+  if (f === 'all' && filtered.length >= 4) {
+    /* marquee mode — only when 4+ books so duplicate isn't obvious */
     staticGrid.style.display  = 'none';
     marqueeWrap.style.display = 'block';
 
@@ -885,11 +885,11 @@ function applyFilter(f) {
     document.getElementById('books-track').innerHTML = cardsHTML + cardsHTML;
 
     /* set animation duration based on count */
-    const dur = Math.max(20, filtered.length * 5);
+    const dur = Math.max(25, filtered.length * 6);
     document.getElementById('books-track').style.animationDuration = dur + 's';
 
   } else {
-    /* static grid mode */
+    /* static grid mode — for filtered categories OR less than 4 books */
     marqueeWrap.style.display = 'none';
     staticGrid.style.display  = 'grid';
 
@@ -932,10 +932,4 @@ function closeModal(e) {
 function sendEmail(e) {
   e.preventDefault();
   const n  = document.getElementById('fn').value;
-  const em = document.getElementById('fe').value;
-  const m  = document.getElementById('fm').value;
-  window.open(`mailto:mramitra70@gmail.com?subject=Message from ${encodeURIComponent(n)}&body=${encodeURIComponent(m+'\n\nFrom: '+em)}`);
-}
-</script>
-</body>
-</html>
+  const em = document.getElementByI

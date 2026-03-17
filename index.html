@@ -29,10 +29,19 @@
       const snap = await getDocs(q);
       const books = [];
       snap.forEach(d => books.push({ id: d.id, ...d.data() }));
-      window.renderBooks(books);
+      // Wait for renderBooks to be defined (regular script loads after module)
+      if (typeof window.renderBooks === 'function') {
+        window.renderBooks(books);
+      } else {
+        window._pendingBooks = books;
+      }
     } catch(e) {
       console.error(e);
-      window.renderBooks([]);
+      if (typeof window.renderBooks === 'function') {
+        window.renderBooks([]);
+      } else {
+        window._pendingBooks = [];
+      }
     }
   }
   window.addEventListener('load', loadBooks);
@@ -918,6 +927,8 @@ function cardHTML(b, cls='') {
 }
 
 window.renderBooks = function(books) {
+  // Clear pending flag
+  window._pendingBooks = undefined;
   allBooks = books;
   document.getElementById('stat-books').textContent = books.length || '0';
   applyFilter('all');
@@ -995,6 +1006,11 @@ function sendEmail(e) {
   const subject = encodeURIComponent('Message from ' + n);
   const body    = encodeURIComponent(msg + '\n\nFrom: ' + n + ' <' + em + '>');
   window.location.href = `mailto:mramitra70@gmail.com?subject=${subject}&body=${body}`;
+}
+
+// If Firebase loaded before this script, process pending books now
+if (window._pendingBooks !== undefined) {
+  window.renderBooks(window._pendingBooks);
 }
 
 function toggleNav() {

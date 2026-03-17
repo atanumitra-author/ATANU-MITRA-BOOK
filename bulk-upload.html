@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Upload — Atanu Mitra Books</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDRc39r_GepYNr-hCt1fEzNcWy8r_Z0U0w",
+    authDomain: "atanumitra-7ad17.firebaseapp.com",
+    projectId: "atanumitra-7ad17",
+    storageBucket: "atanumitra-7ad17.firebasestorage.app",
+    messagingSenderId: "359751553651",
+    appId: "1:359751553651:web:edc0a0b3b68d65f7d15006"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  window.doLogin = async (email, pass) => signInWithEmailAndPassword(auth, email, pass);
+  window.doLogout = () => auth.signOut();
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('main').style.display  = 'block';
+      // Check existing books
+      const snap = await getDocs(collection(db, 'books'));
+      window._existingTitles = [];
+      snap.forEach(d => window._existingTitles.push(d.data().title));
+      markDuplicates();
+    } else {
+      document.getElementById('login').style.display = 'flex';
+      document.getElementById('main').style.display  = 'none';
+    }
+  });
+
+  window.uploadBooks = async (books) => {
+    const col = collection(db, 'books');
+    for (const b of books) {
+      b.createdAt = serverTimestamp();
+      b.updatedAt = serverTimestamp();
+      await addDoc(col, b);
+    }
+  };
+</script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0906;--surf:#161208;--surf2:#1d1710;--surf3:#241e12;
+  --gold:#c9943a;--amber:#f2c55a;--text:#ede5d5;--muted:#8a8070;
+  --border:rgba(201,148,58,.15);--red:#9b3a2a;--green:#1d6a3e;
+}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* LOGIN */
+#login{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse 60% 50% at 50% 45%,rgba(201,148,58,.06) 0%,transparent 65%) var(--bg);
+}
+.login-box{background:var(--surf);border:1px solid var(--border);width:380px;padding:48px 38px;}
+.login-logo{font-family:'Playfair Display',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:6px;}
+.login-title{font-family:'Playfair Display',serif;font-size:28px;color:var(--text);text-align:center;margin-bottom:30px;}
+.lf{margin-bottom:16px;}
+.lf label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.lf input{width:100%;padding:12px 14px;background:var(--surf2);border:1px solid var(--border);color:var(--text);font-family:'Jost',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+.lf input:focus{border-color:var(--gold);}
+.login-btn{width:100%;padding:14px;background:var(--gold);color:var(--bg);border:none;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;font-weight:600;cursor:pointer;transition:background .2s;}
+.login-btn:hover{background:var(--amber);}
+.login-err{font-size:13px;color:#e07060;text-align:center;margin-top:12px;display:none;}
+
+/* MAIN */
+#main{display:none;max-width:1100px;margin:0 auto;padding:40px 24px 80px;}
+
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:14px;}
+.top-brand{font-family:'Playfair Display',serif;font-size:22px;color:var(--text);}
+.top-brand span{color:var(--gold);font-style:italic;}
+.top-btns{display:flex;gap:10px;}
+.tbtn{padding:9px 20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);font-family:'Jost',sans-serif;font-weight:600;transition:all .2s;background:transparent;color:var(--muted);}
+.tbtn:hover{border-color:var(--text);color:var(--text);}
+.tbtn-gold{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+.tbtn-gold:hover{background:var(--amber);border-color:var(--amber);}
+.tbtn-red{border-color:rgba(155,58,42,.4);color:#e07060;}
+.tbtn-red:hover{background:var(--red);color:#fff;border-color:var(--red);}
+
+/* SUMMARY BOX */
+.summary{
+  background:var(--surf);border:1px solid var(--border);
+  padding:22px 26px;margin-bottom:32px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+}
+.summary-stat{text-align:center;}
+.summary-n{font-family:'Playfair Display',serif;font-size:36px;color:var(--amber);line-height:1;}
+.summary-l{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+
+/* PROGRESS */
+.progress-wrap{display:none;margin-bottom:28px;}
+.progress-bar{height:4px;background:var(--surf2);border-radius:2px;overflow:hidden;margin-bottom:10px;}
+.progress-fill{height:100%;background:var(--gold);transition:width .3s;width:0%;}
+.progress-txt{font-size:12px;color:var(--muted);text-align:center;}
+
+/* STATUS */
+.upload-status{
+  padding:14px 18px;font-size:14px;margin-bottom:24px;display:none;
+  border-left:3px solid;line-height:1.6;
+}
+.st-ok{background:rgba(29,106,62,.1);color:#4ade80;border-color:#4ade80;}
+.st-err{background:rgba(155,58,42,.1);color:#f87171;border-color:#f87171;}
+.st-load{background:rgba(201,148,58,.08);color:var(--gold);border-color:var(--gold);}
+
+/* BOOKS GRID */
+.books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+
+.book-card{
+  background:var(--surf);border:1px solid var(--border);
+  padding:0;position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.book-card:hover{border-color:rgba(201,148,58,.35);}
+.book-card.duplicate{border-color:rgba(155,58,42,.4);opacity:.65;}
+.book-card.selected{border-color:var(--gold);background:rgba(201,148,58,.05);}
+
+.card-top{padding:18px 18px 14px;}
+.card-num{
+  position:absolute;top:12px;right:12px;
+  font-size:10px;letter-spacing:1.5px;color:var(--muted);
+}
+.dup-badge{
+  display:none;position:absolute;top:12px;left:12px;
+  padding:3px 8px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:700;
+  background:rgba(155,58,42,.85);color:#fff;
+}
+.book-card.duplicate .dup-badge{display:block;}
+
+.card-cat{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.card-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.card-meta{font-size:11px;color:var(--muted);margin-bottom:10px;}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:12px;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+
+.card-fields{border-top:1px solid var(--border);padding:12px 18px;display:flex;flex-direction:column;gap:6px;}
+.cf-row{display:flex;gap:8px;align-items:center;}
+.cf-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);width:64px;flex-shrink:0;}
+.cf-val{font-size:11px;color:var(--muted);}
+
+.card-footer{
+  border-top:1px solid var(--border);padding:10px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;color:var(--muted);}
+.card-check input{accent-color:var(--gold);width:15px;height:15px;cursor:pointer;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-pub{background:#4ade80;}
+.dot-up{background:#f87171;}
+.dot-ac{background:var(--gold);}
+
+@media(max-width:600px){
+  .books-grid{grid-template-columns:1fr;}
+  .top-bar{flex-direction:column;align-items:flex-start;}
+  .summary{flex-direction:column;align-items:flex-start;gap:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <div class="login-logo">Atanu Mitra</div>
+    <h1 class="login-title">Bulk Uploader</h1>
+    <div class="lf"><label>Email</label><input type="email" id="l-e" placeholder="your@email.com"/></div>
+    <div class="lf"><label>Password</label><input type="password" id="l-p" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/></div>
+    <button class="login-btn" onclick="login()">Sign In →</button>
+    <div class="login-err" id="l-err">Invalid credentials.</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="top-bar">
+    <div class="top-brand">Atanu Mitra — <span>Bulk Uploader</span></div>
+    <div class="top-btns">
+      <button class="tbtn" onclick="selectAll()">Select All</button>
+      <button class="tbtn" onclick="selectNone()">Deselect All</button>
+      <button class="tbtn tbtn-gold" onclick="uploadSelected()">⬆ Upload Selected</button>
+      <button class="tbtn" onclick="window.doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-stat"><div class="summary-n" id="s-total">0</div><div class="summary-l">Total Books</div></div>
+    <div class="summary-stat"><div class="summary-n" id="s-selected">0</div><div class="summary-l">Selected</div></div>
+    <div class="summary-stat"><div class="summary-n" id="s-dup">0</div><div class="summary-l">Already Exists</div></div>
+    <div class="summary-stat"><div class="summary-n" id="s-uploaded">0</div><div class="summary-l">Uploaded</div></div>
+  </div>
+
+  <div class="progress-wrap" id="prog-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+    <div class="progress-txt" id="prog-txt">Uploading…</div>
+  </div>
+
+  <div class="upload-status" id="up-status"></div>
+
+  <div class="books-grid" id="books-grid"></div>
+</div>
+
+<script>
+// ── ALL BOOKS FROM PDF ──
+const BOOKS = [
+  {
+    title: "সিন্দবাদের দুঃসাহসিক অভিযান",
+    titleEn: "Sindbader Duhsahasik Abhiyan",
+    category: "fiction",
+    status: "published",
+    year: "2023",
+    publisher: "জবা পাবলিকেশন, ময়না, পূর্ব মেদিনীপুর",
+    isbn: "978-81-960234-0-9",
+    price: "₹100",
+    description: "Sinbad the Sailor's daring adventures — retold in Bengali for young readers. Published at Kolkata Book Fair, January 2023.",
+    purchaseUrl: ""
+  },
+  {
+    title: "বিজ্ঞান বিশ্বে বাংলার মেয়েরা",
+    titleEn: "Bijnan Biswe Banglar Meyera",
+    category: "non-fiction",
+    status: "published",
+    year: "2025",
+    publisher: "তপতী পাবলিকেশন, কলকাতা",
+    isbn: "978-93-93728-56-2",
+    price: "₹280",
+    description: "Profiles of Bengali women who have made remarkable contributions to science. Foreword by Dr. Chandrimaa Saha, former President, Indian National Science Academy, New Delhi. Published at Kolkata International Book Fair, 2025.",
+    purchaseUrl: ""
+  },
+  {
+    title: "বিদ্যাসাগর — সাত দশকের উপাখ্যান",
+    titleEn: "Vidyasagar — Saat Dashaker Upakhyan",
+    category: "history",
+    status: "published",
+    year: "",
+    publisher: "Arindam's, মিদনাপুর",
+    isbn: "",
+    price: "",
+    description: "A detailed biographical and historical account of Ishwar Chandra Vidyasagar spanning seven decades of his life and legacy in Bengal.",
+    purchaseUrl: ""
+  },
+  {
+    title: "মানুষ যেখানে মৃত্যু ভুলে যান",
+    titleEn: "Manush Jekhane Mrityu Bhule Jan",
+    category: "non-fiction",
+    status: "published",
+    year: "",
+    publisher: "অশোক বুক এজেন্সি, কলকাতা",
+    isbn: "",
+    price: "",
+    description: "A compelling non-fiction work exploring places and communities where people live beyond the fear of death — blending travel, sociology and human stories.",
+    purchaseUrl: ""
+  },
+  {
+    title: "পঞ্চতন্ত্রের গল্প",
+    titleEn: "Panchatantrer Galpa — Tales from Panchatantra (Bilingual)",
+    category: "fiction",
+    status: "published",
+    year: "",
+    publisher: "অশোক বুক এজেন্সি, ৩৬বি কলেজ রো, কলকাতা-৭০০০০৯",
+    isbn: "",
+    price: "₹110",
+    description: "Bilingual (Bengali & English) retelling of the ancient Panchatantra fables — moral stories for children featuring animals and wisdom. Illustrations by Harinarayan Chanda.",
+    purchaseUrl: ""
+  },
+  {
+    title: "From Harlots to Heroines",
+    titleEn: "From Harlots to Heroines",
+    category: "history",
+    status: "published",
+    year: "2025",
+    publisher: "Arindam's (Arindam Bhowmik), G5 Bidhannagar, Midnapore 721101",
+    isbn: "978-81-977048-2-6",
+    price: "₹220 / $3 USD",
+    description: "Incredible fight of women in the Indian Freedom Struggle. Foreword by Lt. Bharati 'Asha' Sahay Choudhry, Rani of Jhansi Regiment, Azad Hind Fauj. Published at Kolkata International Book Fair, 2025.",
+    purchaseUrl: ""
+  },
+  {
+    title: "বিশ্ববরেণ্য বিজ্ঞানী",
+    titleEn: "Viswabarenya Bijnani",
+    category: "non-fiction",
+    status: "published",
+    year: "2026",
+    publisher: "অশোক বুক এজেন্সি, ৩৬বি কলেজ রো, কলকাতা-৭০০০০৯",
+    isbn: "978-93-48019-25-7",
+    price: "₹200",
+    description: "Profiles of the world's greatest scientists — from Galileo and Copernicus to Einstein and Indian scientific luminaries. First published January 2026.",
+    purchaseUrl: ""
+  }
+];
+
+let uploadedCount = 0;
+
+async function login() {
+  const e = document.getElementById('l-e').value.trim();
+  const p = document.getElementById('l-p').value;
+  const btn = document.querySelector('.login-btn');
+  const err = document.getElementById('l-err');
+  btn.textContent = 'Signing in…'; btn.disabled = true; err.style.display = 'none';
+  try {
+    await window.doLogin(e, p);
+  } catch(ex) {
+    err.textContent = ex.code === 'auth/too-many-requests' ? 'Too many attempts. Try later.' : 'Invalid email or password.';
+    err.style.display = 'block';
+  } finally {
+    btn.textContent = 'Sign In →'; btn.disabled = false;
+  }
+}
+
+function markDuplicates() {
+  const existing = window._existingTitles || [];
+  renderBooks(existing);
+}
+
+function renderBooks(existing = []) {
+  const grid = document.getElementById('books-grid');
+  grid.innerHTML = '';
+  let dupCount = 0;
+
+  BOOKS.forEach((b, i) => {
+    const isDup = existing.some(t => t.trim().toLowerCase() === b.title.trim().toLowerCase());
+    if (isDup) dupCount++;
+
+    const statusDot = b.status === 'upcoming' ? 'dot-up' : b.status === 'academic' ? 'dot-ac' : 'dot-pub';
+    const card = document.createElement('div');
+    card.className = 'book-card' + (isDup ? ' duplicate' : '');
+    card.id = 'card-' + i;
+    card.innerHTML = `
+      <div class="dup-badge">Already Added</div>
+      <div class="card-num">#${i+1}</div>
+      <div class="card-top">
+        <div class="card-cat">${b.category}</div>
+        <div class="card-title">${b.title}</div>
+        ${b.titleEn !== b.title ? `<div class="card-meta" style="font-style:italic;font-size:11px">${b.titleEn}</div>` : ''}
+        <div class="card-meta">${[b.year, b.publisher].filter(Boolean).join(' · ')}</div>
+        <div class="card-desc">${b.description}</div>
+      </div>
+      <div class="card-fields">
+        ${b.isbn ? `<div class="cf-row"><span class="cf-lbl">ISBN</span><span class="cf-val">${b.isbn}</span></div>` : ''}
+        ${b.price ? `<div class="cf-row"><span class="cf-lbl">Price</span><span class="cf-val">${b.price}</span></div>` : ''}
+      </div>
+      <div class="card-footer">
+        <label class="card-check">
+          <input type="checkbox" id="chk-${i}" ${isDup ? '' : 'checked'} onchange="updateCount()"/>
+          Upload this book
+        </label>
+        <div class="status-dot ${statusDot}" title="${b.status}"></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('s-total').textContent    = BOOKS.length;
+  document.getElementById('s-dup').textContent      = dupCount;
+  updateCount();
+}
+
+function updateCount() {
+  let sel = 0;
+  BOOKS.forEach((_, i) => {
+    const chk = document.getElementById('chk-'+i);
+    const card = document.getElementById('card-'+i);
+    if (chk && chk.checked) { sel++; card.classList.add('selected'); }
+    else if (card) card.classList.remove('selected');
+  });
+  document.getElementById('s-selected').textContent = sel;
+}
+
+function selectAll()  { BOOKS.forEach((_,i) => { const c = document.getElementById('chk-'+i); if(c) c.checked = true; }); updateCount(); }
+function selectNone() { BOOKS.forEach((_,i) => { const c = document.getElementById('chk-'+i); if(c) c.checked = false; }); updateCount(); }
+
+function showStatus(msg, type) {
+  const el = document.getElementById('up-status');
+  el.innerHTML = msg; el.className = 'upload-status st-' + type; el.style.display = 'block';
+}
+
+async function uploadSelected() {
+  const toUpload = BOOKS.filter((_, i) => {
+    const chk = document.getElementById('chk-'+i);
+    return chk && chk.checked;
+  });
+
+  if (!toUpload.length) { showStatus('Koi book select nahi ki!', 'err'); return; }
+
+  const progWrap = document.getElementById('prog-wrap');
+  const progFill = document.getElementById('prog-fill');
+  const progTxt  = document.getElementById('prog-txt');
+  progWrap.style.display = 'block';
+  showStatus(`Uploading ${toUpload.length} books to Firebase…`, 'load');
+
+  let done = 0, failed = 0;
+  for (const b of toUpload) {
+    try {
+      const data = {
+        title:       b.title,
+        category:    b.category,
+        status:      b.status,
+        year:        b.year || '',
+        publisher:   b.publisher || '',
+        description: b.description || '',
+        purchaseUrl: b.purchaseUrl || '',
+        coverUrl:    '',
+      };
+      await window.uploadBooks([data]);
+      done++;
+    } catch(err) {
+      console.error(err);
+      failed++;
+    }
+    const pct = Math.round(((done + failed) / toUpload.length) * 100);
+    progFill.style.width = pct + '%';
+    progTxt.textContent  = `Uploading… ${done + failed} / ${toUpload.length}`;
+  }
+
+  uploadedCount += done;
+  document.getElementById('s-uploaded').textContent = uploadedCount;
+
+  progWrap.style.display = 'none';
+  progFill.style.width   = '0%';
+
+  if (failed === 0) {
+    showStatus(`✓ ${done} book${done > 1 ? 's' : ''} successfully uploaded to Firebase! Ab website pe dikhengi.`, 'ok');
+  } else {
+    showStatus(`✓ ${done} uploaded. ✗ ${failed} failed. Console check karo.`, 'err');
+  }
+
+  // Refresh to show newly added as duplicates
+  const snap_titles = [...(window._existingTitles || []), ...toUpload.map(b => b.title)];
+  window._existingTitles = snap_titles;
+  renderBooks(snap_titles);
+}
+</script>
+</body>
+</html>

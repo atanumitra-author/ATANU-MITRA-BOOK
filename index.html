@@ -21,7 +21,7 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  window.addEventListener('load', async function() {
+  window._loadFirebaseBooks = async function() {
     try {
       const snap = await db.collection('books').orderBy('createdAt', 'desc').get();
       const books = [];
@@ -31,7 +31,7 @@
       console.error('Firebase error:', e);
       window.renderBooks([]);
     }
-  });
+  };
 </script>
 
 <style>
@@ -914,8 +914,6 @@ function cardHTML(b, cls='') {
 }
 
 window.renderBooks = function(books) {
-  // Clear pending flag
-  window._pendingBooks = undefined;
   allBooks = books;
   document.getElementById('stat-books').textContent = books.length || '0';
   applyFilter('all');
@@ -995,10 +993,8 @@ function sendEmail(e) {
   window.location.href = `mailto:mramitra70@gmail.com?subject=${subject}&body=${body}`;
 }
 
-// If Firebase loaded before this script, process pending books now
-if (window._pendingBooks !== undefined) {
-  window.renderBooks(window._pendingBooks);
-}
+// Now that renderBooks is ready, load books from Firebase
+if (window._loadFirebaseBooks) window._loadFirebaseBooks();
 
 function toggleNav() {
   const toggle  = document.getElementById('nav-toggle');
